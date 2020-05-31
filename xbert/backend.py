@@ -148,28 +148,6 @@ def batch_gather(params, indices):
             raise ValueError('%s\n%s\n' % (e1.message, e2.message))
 
 
-def pool1d(
-    x,
-    pool_size,
-    strides=1,
-    padding='valid',
-    data_format=None,
-    pool_mode='max'
-):
-    """向量序列的pool函数
-    """
-    x = K.expand_dims(x, 1)
-    x = K.pool2d(
-        x,
-        pool_size=(1, pool_size),
-        strides=(1, strides),
-        padding=padding,
-        data_format=data_format,
-        pool_mode=pool_mode
-    )
-    return x[:, 0]
-
-
 def divisible_temporal_padding(x, n):
     """将一维向量序列右padding到长度能被n整除
     """
@@ -190,12 +168,6 @@ def leaky_relu(x, alpha=0.2):
     return tf.nn.leaky_relu(x, alpha=alpha)
 
 
-def symbolic(f):
-    """恒等装饰器（兼容旧版本keras用）
-    """
-    return f
-
-
 def graph_mode_decorator(f, *args, **kwargs):
     """tf2.1与之前版本的传参方式不一样，这里做个同步
     """
@@ -204,9 +176,6 @@ def graph_mode_decorator(f, *args, **kwargs):
     else:
         return _graph_mode_decorator(f, args, kwargs)
 
-
-# 给旧版本tf.keras新增symbolic方法（装饰器），以便兼容optimizers.py中的代码
-K.symbolic = getattr(K, 'symbolic', None) or symbolic
 
 custom_objects = {
     'gelu_erf': gelu_erf,
