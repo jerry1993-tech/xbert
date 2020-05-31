@@ -186,3 +186,4 @@ custom_objects = {
 }
 
 keras.utils.get_custom_objects().update(custom_objects)
+
