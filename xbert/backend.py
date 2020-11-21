@@ -9,7 +9,6 @@
 # the function of this file: Provide custom backend functions based on tf2
 
 
-import os
 import sys
 import numpy as np
 import tensorflow as tf

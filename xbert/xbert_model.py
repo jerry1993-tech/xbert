@@ -15,14 +15,14 @@ from .layers.embedding_layer import Embedding
 from .layers.bias_add import BiasAdd
 from .layers.position_embedding import PositionEmbedding
 from .layers.multi_head_attention import MultiHeadAttention
-from .layers.layer_normalization import BasicLayerNormalization, LayerNormalization
+from .layers.layer_normalization import BasicLayerNormalization, ConditionalLayerNormalization
 from .layers.feed_forward import FeedForward
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import Model
 import numpy as np
 import tensorflow as tf
 import json
-from utils import is_sting
+from .utils import is_sting
 
 
 __all__ = [
@@ -36,7 +36,7 @@ def get_custom_objects() -> dict:
         'BiasAdd': BiasAdd,
         'MultiHeadAttention': MultiHeadAttention,
         'BasicLayerNormalization': BasicLayerNormalization,
-        'LayerNormalization': LayerNormalization,
+        'ConditionalLayerNormalization': ConditionalLayerNormalization,
         'PositionEmbedding': PositionEmbedding,
         'FeedForward': FeedForward,
     }
@@ -326,7 +326,7 @@ class BERT(TransformerBlock):
             output_dim=self.embedding_size,
             embeddings_initializer=self.initializer,
             mask_zero=True,
-            name='Embedding_Token'
+            name='Embedding-Token'
         )
         s = self.apply(
             inputs=s,
@@ -334,9 +334,9 @@ class BERT(TransformerBlock):
             input_dim=2,
             output_dim=self.embedding_size,
             embeddings_initializer=self.initializer,
-            name='Embedding_Segment'
+            name='Embedding-Segment'
         )
-        x = self.apply(inputs=[x, s], layer=Add, name='Embedding_Token_Segment')
+        x = self.apply(inputs=[x, s], layer=Add, name='Embedding-Token-Segment')
         x = self.apply(
             inputs=self.simplify([x, p]),
             layer=PositionEmbedding,
@@ -345,22 +345,22 @@ class BERT(TransformerBlock):
             merge_mode='add',
             embeddings_initializer=self.initializer,
             custom_position_ids=self.custom_position_ids,
-            name='Embedding_Position'
+            name='Embedding-Position'
         )
         x = self.apply(
             inputs=self.simplify([x, z]),
-            layer=LayerNormalization,
+            layer=ConditionalLayerNormalization,
             conditional=(z is not None),
             hidden_units=self.layer_norm_conds[1],
             hidden_activation=self.layer_norm_conds[2],
             hidden_initializer=self.initializer,
-            name='Embedding_Norm'
+            name='Embedding-Norm'
         )
         x = self.apply(
             inputs=x,
             layer=Dropout,
             rate=self.dropout_rate,
-            name='Embedding_Dropout'
+            name='Embedding-Dropout'
         )
         if self.embedding_size != self.hidden_size:
             x = self.apply(
@@ -368,7 +368,7 @@ class BERT(TransformerBlock):
                 layer=Dense,
                 units=self.hidden_size,
                 kernel_initializer=self.initializer,
-                name='Embedding_Mapping'
+                name='Embedding-Mapping'
             )
 
         return x
@@ -395,7 +395,7 @@ class BERT(TransformerBlock):
             inputs=x,
             layer=MultiHeadAttention,
             arguments=arguments,
-            heads=self.num_attention_heads,
+            num_heads=self.num_attention_heads,
             head_size=self.attention_head_size,
             key_size=self.attention_key_size,
             kernel_initializer=self.initializer,
@@ -412,7 +412,7 @@ class BERT(TransformerBlock):
         )
         x = self.apply(
             inputs=self.simplify([x, z]),
-            layer=LayerNormalization,
+            layer=ConditionalLayerNormalization,
             conditional=(z is not None),
             hidden_units=self.layer_norm_conds[1],
             hidden_activation=self.layer_norm_conds[2],
@@ -441,7 +441,7 @@ class BERT(TransformerBlock):
         )
         x = self.apply(
             inputs=self.simplify([x, z]),
-            layer=LayerNormalization,
+            layer=ConditionalLayerNormalization,
             conditional=(z is not None),
             hidden_units=self.layer_norm_conds[1],
             hidden_activation=self.layer_norm_conds[2],
@@ -501,7 +501,7 @@ class BERT(TransformerBlock):
             )
             x = self.apply(
                 inputs=self.simplify([x, z]),
-                layer=LayerNormalization,
+                layer=ConditionalLayerNormalization,
                 conditional=(z is not None),
                 hidden_units=self.layer_norm_conds[1],
                 hidden_activation=self.layer_norm_conds[2],
@@ -561,14 +561,14 @@ class BERT(TransformerBlock):
         """对官方bert的checkpoint中权重按格式进行映射
         """
         mapping = {
-            'Embedding_Token': ['bert/embeddings/word_embeddings'],
-            'Embedding_Segment': ['bert/embeddings/token_type_embeddings'],
-            'Embedding_Position': ['bert/embeddings/position_embeddings'],
-            'Embedding_Norm': [
+            'Embedding-Token': ['bert/embeddings/word_embeddings'],
+            'Embedding-Segment': ['bert/embeddings/token_type_embeddings'],
+            'Embedding-Position': ['bert/embeddings/position_embeddings'],
+            'Embedding-Norm': [
                 'bert/embeddings/LayerNorm/beta',
                 'bert/embeddings/LayerNorm/gamma',
             ],
-            'Embedding_Mapping': [
+            'Embedding-Mapping': [
                 'bert/encoder/embedding_hidden_mapping_in/kernel',
                 'bert/encoder/embedding_hidden_mapping_in/bias',
             ],

@@ -11,7 +11,7 @@
 
 from tensorflow.keras import initializers, activations
 from .custom_decorator import Layer, integerize_shape
-from tensorflow.keras import Dense
+from tensorflow.keras.layers import Dense
 
 
 class FeedForward(Layer):

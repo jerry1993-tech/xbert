@@ -48,7 +48,7 @@ class BasicLayerNormalization(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class LayerNormalization(Layer):
+class ConditionalLayerNormalization(Layer):
     """
     实现Conditional Layer Normalization 层
     当参数hidden_*仅为有输入条件时使用，即conditional=True
@@ -64,7 +64,7 @@ class LayerNormalization(Layer):
         hidden_initializer='glorot_uniform',
         **kwargs
     ):
-        super(LayerNormalization, self).__init__(**kwargs)
+        super(ConditionalLayerNormalization, self).__init__(**kwargs)
         self.center = center
         self.scale = scale
         self.conditional = conditional
@@ -84,7 +84,7 @@ class LayerNormalization(Layer):
             return mask
 
     def build(self, input_shape):
-        super(LayerNormalization, self).build(input_shape)
+        super(ConditionalLayerNormalization, self).build(input_shape)
 
         if self.conditional:
             shape = (input_shape[0][-1],)
@@ -169,6 +169,6 @@ class LayerNormalization(Layer):
             'hidden_initializer':
                 initializers.serialize(self.hidden_initializer),
         }
-        base_config = super(LayerNormalization, self).get_config()
+        base_config = super(ConditionalLayerNormalization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
